@@ -14,17 +14,14 @@ public class KickAss {
 		
 		try {
 			World myWorld = new World(FileSystems.getDefault().getPath(""),
-					"GradingMaze1 easy");
-			//myWorld.printMaze();
-			
-			//System.out.println("start "+myWorld.getStartCoordinate()+" finish "+myWorld.getFinishCoordinate());
+					"GradingMaze2 medium");
 			
 			AntPathing pathing = new AntPathing(myWorld,myWorld.getStartCoordinate(),myWorld.getFinishCoordinate());
 			Route result = pathing.findRoute();
 			
-//			if(result != null) {
-//				result.write(FileSystems.getDefault().getPath(myWorld.getName()+" route.txt"));
-//			}
+			if(result != null) {
+				result.write(FileSystems.getDefault().getPath(myWorld.getName()+" route.txt"));
+			}
 			
 			System.out.println("Result: "+result);
 		} catch (IOException e) {

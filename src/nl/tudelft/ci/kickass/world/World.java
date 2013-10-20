@@ -151,6 +151,20 @@ public class World {
 				}
 			}
 		}
+		
+		queue = new ArrayList<Node>();
+		queue.add(root);
+		
+		/*while(queue.size() != 0) {
+			current = queue.remove(0);
+			
+			if(current.numberOfAdjacentNodes() == 4) {
+				Coordinate coord = current.getCoordinate();
+				
+				Coordinate tmp = coord.getAdjacent(Direction.DIRECTION_EAST);
+				if(tmp.getAdjacent(Direction.DIRECTION_NORTH).isObstacle())
+			}
+		}*/
 
 		return root;
 	}

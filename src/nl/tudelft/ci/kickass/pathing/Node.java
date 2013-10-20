@@ -24,7 +24,7 @@ public class Node {
 			this.adjacentNodes[i] = NullNode.getInstance();
 		
 		this.coordinate = coordinate;
-		this.value = 0.0;
+		this.value = 1.0; // TODO this is Ant specific
 	}
 	
 	public World getWorld() {
@@ -105,6 +105,32 @@ public class Node {
 		}
 		
 		return null;
+	}
+	
+	public ArrayList<Node> makeFlat() {
+		ArrayList<Node> queue, list;
+	
+		list = new ArrayList<Node>();
+		list.add(this);
+		queue = new ArrayList<Node>();
+		queue.add(this);
+		
+		while(queue.size() > 0) {
+			Node n = queue.remove(0);
+			
+			for(Node next : n.adjacentNodes) {
+				if(!next.isValid())
+					continue;
+				
+				if(list.contains(next))
+					continue;
+				
+				queue.add(next);
+				list.add(next);	
+			}
+		}
+		
+		return list;
 	}
 	
 	public boolean isValid() {

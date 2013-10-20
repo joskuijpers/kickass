@@ -11,10 +11,10 @@ import nl.tudelft.ci.kickass.world.World;
 
 public class AntPathing extends PathingAlgorithm {
 	
-	public final static int MAX_NUM_ITERATIONS = 10;
-	public final static int NUM_ANTS_PER_ITERATION = 100;
-	public final static double PHEROMONE_DROPPED_BY_ANT = 1;
-	public final static double PHEROMONE_EVAPORATION_PARM = 10;
+	public final static int MAX_NUM_ITERATIONS = 10; // number of optimization iterations
+	public final static int NUM_ANTS_PER_ITERATION = 25; // number of ants used per iteration
+	public final static double PHEROMONE_DROPPED_BY_ANT = 10.0;
+	public final static double PHEROMONE_EVAPORATION_PARAM = 0.1; // val = val*(1-PARAM)
 	public final static double CONVERGENCE_CRITERION = 10;
 	public final static int NUM_THREADS = 1;
 	
@@ -54,9 +54,18 @@ public class AntPathing extends PathingAlgorithm {
 	
 	private void optimizeMaze(Node start, Node end) {
 		int iterations = 0;
+		ArrayList<Node> nodes;
 		
+		// A flat list for very fast traversal
+		nodes = start.makeFlat();
+
 		while((iterations < MAX_NUM_ITERATIONS)) {
 			doIteration(start,end);
+			
+			// Decrease all pheromones
+			for(Node node : nodes)
+				node.setValue(node.getValue()*(1.0-PHEROMONE_EVAPORATION_PARAM));
+			
 			iterations++;
 		}
 	}
@@ -140,9 +149,8 @@ public class AntPathing extends PathingAlgorithm {
 				
 				// Something happened to the ant
 				if(ant.isAtDeadEnd) { // It died
-					System.out.print("D");
 				} else {
-					System.out.print("F("+ant.getRoute().getLength()+")");
+					ant.dropPheromones(1.0);
 				}
 			}
 		}
@@ -180,10 +188,13 @@ public class AntPathing extends PathingAlgorithm {
 			return isAtDeadEnd;
 		}
 		
-		void dropPheromones() {
-			double pheromones = currentNode.getValue();
-			pheromones += 1.0;
-			currentNode.setValue(pheromones);
+		synchronized void dropPheromones(double multiplier) {
+			double added = PHEROMONE_DROPPED_BY_ANT / route.getLength(); 
+			
+			for(int i = 0; i < route.getLength(); i++) {
+				Node node = route.getStep(i);
+				node.setValue(node.getValue()*multiplier + added);
+			}
 		}
 		
 		/**
@@ -215,6 +226,7 @@ public class AntPathing extends PathingAlgorithm {
 			int numberOfDirections = 0;
 			Node previousStep = route.getStep(route.getLength()-2); // last is currentNode, so -2 is prev 
 			Direction directions[] = new Direction[4];
+			double totalPheromone = 0.0;
 
 			for(Direction dir : Direction.values()) {
 				Node nextNode = currentNode.getAdjacentNode(dir);
@@ -232,6 +244,7 @@ public class AntPathing extends PathingAlgorithm {
 					continue;
 				
 				directions[numberOfDirections++] = dir;
+				totalPheromone += nextNode.getValue();
 			}
 			
 			// Nowhere to go
@@ -239,8 +252,23 @@ public class AntPathing extends PathingAlgorithm {
 				return Direction.INVALID_DIRECTION;
 
 			// Math to find the actual direction:
-			int y = (int)Math.round(Math.random()*(numberOfDirections-1));
-			return directions[y];
+			double chances[] = new double[numberOfDirections];
+			
+			for(int i = 0; i < numberOfDirections; i++) {
+				Node adjacent = currentNode.getAdjacentNode(directions[i]);
+				chances[i] = adjacent.getValue() / totalPheromone;
+			}
+			
+			double random = Math.random();
+			double sliceStart = 0.0;
+			for(int i = 0; i < numberOfDirections; i++) {
+				if(sliceStart <= random && random <= sliceStart + chances[i])
+					return directions[i];
+				
+				sliceStart += chances[i];
+			}
+
+			return null;
 		}
 		
 		@Override
