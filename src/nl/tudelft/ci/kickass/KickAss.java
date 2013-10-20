@@ -2,7 +2,9 @@ package nl.tudelft.ci.kickass;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.util.ArrayList;
 
+import nl.tudelft.ci.kickass.pathing.Node;
 import nl.tudelft.ci.kickass.world.Coordinate;
 import nl.tudelft.ci.kickass.world.World;
 
@@ -13,14 +15,19 @@ public class KickAss {
 		try {
 			World myWorld = new World(FileSystems.getDefault().getPath(""),
 					"GradingMaze1 easy");
-			myWorld.printMaze();
+			//myWorld.printMaze();
 			
-			System.out.println("start "+myWorld.getStartCoordinate()+" finish "+myWorld.getFinishCoordinate());
-
-			Coordinate c1 = new Coordinate(myWorld, 4, 5);
-			Coordinate c2 = new Coordinate(myWorld, 4, 6);
+			//System.out.println("start "+myWorld.getStartCoordinate()+" finish "+myWorld.getFinishCoordinate());
 			
-			System.out.println(c2.directionToAdjacent(c1));
+			ArrayList<Node> todo = new ArrayList<Node>();
+			Node current, root = myWorld.generateTree();
+			
+			todo.add(root);
+			while(todo.size() != 0) {
+				current = todo.remove(0);
+				
+				System.out.println("Visit node "+current);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

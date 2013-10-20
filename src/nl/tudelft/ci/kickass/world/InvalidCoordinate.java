@@ -2,8 +2,10 @@ package nl.tudelft.ci.kickass.world;
 
 public class InvalidCoordinate extends Coordinate {
 	
-	InvalidCoordinate(World world) {
-		super(world,0,0);
+	private static InvalidCoordinate instance = new InvalidCoordinate();
+	
+	public static InvalidCoordinate getInstance() {
+		return instance;
 	}
 	
 	@Override
@@ -22,22 +24,12 @@ public class InvalidCoordinate extends Coordinate {
 	}
 	
 	@Override
-	public Coordinate getNorth() {
-		throw new IllegalArgumentException();
+	public Coordinate getAdjacent(Direction d) {
+		return this;
 	}
 	
 	@Override
-	public Coordinate getEast() {
-		throw new IllegalArgumentException();
-	}
-	
-	@Override
-	public Coordinate getSouth() {
-		throw new IllegalArgumentException();
-	}
-	
-	@Override
-	public Coordinate getWest() {
-		throw new IllegalArgumentException();
+	public String toString() {
+		return "<null>";
 	}
 }

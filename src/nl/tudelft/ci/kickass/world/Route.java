@@ -26,7 +26,7 @@ public class Route {
 		for(int i = 0; i < length; i++) {
 			// TODO
 			Direction d = Direction.INVALID_DIRECTION;
-			writer.write(d.getWritableValue()+";");
+			writer.write(d.getValue()+";");
 		}
 		
 		writer.close();

@@ -5,6 +5,10 @@ public class Coordinate {
 	private World world;
 	private int x, y;
 	
+	protected Coordinate() {
+		
+	}
+	
 	public Coordinate(World world, int x, int y) {
 		if(x >= world.getWidth() || y >= world.getHeight()
 				|| x < 0 || y < 0)
@@ -27,28 +31,31 @@ public class Coordinate {
 		return y;
 	}
 	
-	public Coordinate getNorth() {
-		if(y == 0)
-			return new InvalidCoordinate(world);
-		return new Coordinate(world,x,y-1);
+	public boolean isObstacle() {
+		return world.isObstacleAtCoordinate(this);
 	}
 	
-	public Coordinate getEast() {
-		if(x == world.getWidth()-1)
-			return new InvalidCoordinate(world);
-		return new Coordinate(world,x+1,y);
-	}
-	
-	public Coordinate getSouth() {
-		if(y == world.getHeight()-1)
-			return new InvalidCoordinate(world);
-		return new Coordinate(world,x+1,y);
-	}
-	
-	public Coordinate getWest() {
-		if(x == 0)
-			return new InvalidCoordinate(world);
-		return new Coordinate(world,x-1,y);
+	public Coordinate getAdjacent(Direction direction) {
+		switch(direction) {
+			case DIRECTION_NORTH:
+				if(y == 0)
+					return InvalidCoordinate.getInstance();
+				return new Coordinate(world,x,y-1);
+			case DIRECTION_EAST:
+				if(x == world.getWidth()-1)
+					return InvalidCoordinate.getInstance();
+				return new Coordinate(world,x+1,y);
+			case DIRECTION_SOUTH:
+				if(y == world.getHeight()-1)
+					return InvalidCoordinate.getInstance();
+				return new Coordinate(world,x,y+1);
+			case DIRECTION_WEST:
+				if(x == 0)
+					return InvalidCoordinate.getInstance();
+				return new Coordinate(world,x-1,y);
+			default:
+				return InvalidCoordinate.getInstance();
+		}
 	}
 	
 	public boolean isValid() {
