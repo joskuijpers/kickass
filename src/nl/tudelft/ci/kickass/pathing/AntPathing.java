@@ -1,6 +1,8 @@
 package nl.tudelft.ci.kickass.pathing;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
 
 import nl.tudelft.ci.kickass.world.Coordinate;
 import nl.tudelft.ci.kickass.world.Direction;
@@ -14,9 +16,10 @@ public class AntPathing extends PathingAlgorithm {
 	public final static double PHEROMONE_DROPPED_BY_ANT = 1;
 	public final static double PHEROMONE_EVAPORATION_PARM = 10;
 	public final static double CONVERGENCE_CRITERION = 10;
+	public final static int NUM_THREADS = 1;
 	
 	private final World world;
-	private Coordinate startCoordinate, endCoordinate;
+	private final Coordinate startCoordinate, endCoordinate;
 	
 	public AntPathing(World world, Coordinate start, Coordinate end) {
 		this.world = world;
@@ -59,31 +62,27 @@ public class AntPathing extends PathingAlgorithm {
 	}
 	
 	private void doIteration(Node start, Node end) {
-		ArrayList<Ant> ants, antsQueue;
+		ArrayList<Ant> ants;
+		ConcurrentLinkedQueue<Ant> queue;
+		ThreadGroup antGrouping;
+		AntExecutor executor;
 		
 		ants = new ArrayList<Ant>();
-		antsQueue = new ArrayList<Ant>();
+		queue = new ConcurrentLinkedQueue<Ant>();
 		
 		for(int i = 0; i < NUM_ANTS_PER_ITERATION; ++i)
 			ants.add(new Ant(start,end));
-		antsQueue.addAll(ants);
+		queue.addAll(ants);
 		
-		while(antsQueue.size() > 0) {
-			Ant ant = antsQueue.remove(0);
-			
-			// All went well
-			if(ant.doStep()) {
-				antsQueue.add(ant);
-				continue;
-			}
-			
-			// Something happened to the ant
-			if(ant.isAtDeadEnd) { // It died
-				System.out.print("D");
-			} else {
-				System.out.print("F("+ant.getRoute().getLength()+")");
-			}
-		}
+		// Create threads for ant running
+		antGrouping = new ThreadGroup("AntRunners");
+		executor = new AntExecutor(antGrouping);
+		for(int i = 0; i < NUM_THREADS-1; i++)
+			executor.execute(new AntRunner(this,queue));
+		
+		// This thread must also do some math.
+		AntRunner blockingRunner = new AntRunner(this,queue);
+		blockingRunner.run();
 		
 		int f = 0, d = 0;
 		for(Ant a : ants) {
@@ -93,6 +92,60 @@ public class AntPathing extends PathingAlgorithm {
 				d++;
 		}
 		System.out.println("\nNum Finished: "+f+", num dead: "+d+", num with route: "+(f-d));
+	}
+	
+	final class AntExecutor implements Executor {
+		private final ThreadGroup group;
+		
+		AntExecutor(ThreadGroup group) {
+			this.group = group;
+		}
+		
+		public void execute(Runnable r) {
+			new Thread(group,r).start();
+		}
+		
+		void terminate() {
+			System.out.println("Terminate");
+		}
+	}
+	
+	final class AntRunner extends Thread {
+		
+		private final AntPathing pathing;
+		private final ConcurrentLinkedQueue<Ant> queue;
+		private volatile boolean running = true;
+		
+		AntRunner(AntPathing pathing, ConcurrentLinkedQueue<Ant> queue) {
+			this.pathing = pathing;
+			this.queue = queue;
+		}
+		
+		public void terminate() {
+			running = false;
+		}
+		
+		public void run() {
+			Ant ant;
+			while((ant = queue.poll()) != null) {
+				// Change the above with correct termination
+				// because now, when 1 thread takes the single ant, queue is empty and
+				// all threads exit
+				
+				// All went well
+				if(ant.doStep()) {
+					queue.add(ant);
+					continue;
+				}
+				
+				// Something happened to the ant
+				if(ant.isAtDeadEnd) { // It died
+					System.out.print("D");
+				} else {
+					System.out.print("F("+ant.getRoute().getLength()+")");
+				}
+			}
+		}
 	}
 	
 	final class Ant {

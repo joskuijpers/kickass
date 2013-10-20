@@ -10,10 +10,10 @@ import nl.tudelft.ci.kickass.pathing.Node;
 
 public class World {
 	
-	private String name;
+	private final String name;
 	
-	private Path mazePath;
-	private Path coordPath;
+	private final Path mazePath;
+	private final Path coordPath;
 	
 	private int width, height;
 	

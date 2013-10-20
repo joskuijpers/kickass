@@ -4,16 +4,18 @@ import java.util.ArrayList;
 
 import nl.tudelft.ci.kickass.world.Coordinate;
 import nl.tudelft.ci.kickass.world.Direction;
+import nl.tudelft.ci.kickass.world.InvalidCoordinate;
 import nl.tudelft.ci.kickass.world.World;
 
 public class Node {
 	
-	private Coordinate coordinate;
+	private final Coordinate coordinate;
 	private double value;
 	
 	private Node adjacentNodes[];
 	
 	protected Node() {
+		coordinate = InvalidCoordinate.getInstance();
 	}
 	
 	public Node(Coordinate coordinate) {

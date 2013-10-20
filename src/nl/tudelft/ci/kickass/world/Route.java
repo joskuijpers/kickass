@@ -13,8 +13,8 @@ import nl.tudelft.ci.kickass.pathing.NullNode;
 
 public class Route {
 	
-	private Coordinate startCoordinate;
-	private List<Node> steps;
+	private final Coordinate startCoordinate;
+	private final List<Node> steps;
 	
 	public Route(Coordinate startCoordinate) {
 		this.startCoordinate = startCoordinate;
