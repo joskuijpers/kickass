@@ -1,5 +1,7 @@
 package nl.tudelft.ci.kickass.pathing;
 
+import java.util.ArrayList;
+
 import nl.tudelft.ci.kickass.world.Coordinate;
 import nl.tudelft.ci.kickass.world.Direction;
 import nl.tudelft.ci.kickass.world.World;
@@ -73,6 +75,34 @@ public class Node {
 			num++;
 		
 		return num;
+	}
+	
+	public final Node findNode(Coordinate coordinate) {
+		if(this.coordinate.equals(coordinate))
+			return this;
+		
+		ArrayList<Node> queue, done;
+
+		queue = new ArrayList<Node>();
+		done = new ArrayList<Node>();
+		
+		queue.add(this);
+		while(queue.size() > 0) {
+			Node current = queue.remove(0);
+			
+			for(Node n : current.adjacentNodes) {
+				if(done.contains(n) || !n.isValid())
+					continue;
+				
+				if(n.coordinate.equals(coordinate))
+					return n;
+
+				queue.add(n);
+			}
+			done.add(current);
+		}
+		
+		return null;
 	}
 	
 	public boolean isValid() {

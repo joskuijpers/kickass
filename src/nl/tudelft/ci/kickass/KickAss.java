@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
 
-import nl.tudelft.ci.kickass.pathing.Node;
-import nl.tudelft.ci.kickass.world.Coordinate;
+import nl.tudelft.ci.kickass.pathing.AntPathing;
+import nl.tudelft.ci.kickass.world.Route;
 import nl.tudelft.ci.kickass.world.World;
 
 public class KickAss {
@@ -19,15 +19,14 @@ public class KickAss {
 			
 			//System.out.println("start "+myWorld.getStartCoordinate()+" finish "+myWorld.getFinishCoordinate());
 			
-			ArrayList<Node> todo = new ArrayList<Node>();
-			Node current, root = myWorld.generateTree();
+			AntPathing pathing = new AntPathing(myWorld,myWorld.getStartCoordinate(),myWorld.getFinishCoordinate());
+			Route result = pathing.findRoute();
 			
-			todo.add(root);
-			while(todo.size() != 0) {
-				current = todo.remove(0);
-				
-				System.out.println("Visit node "+current);
-			}
+//			if(result != null) {
+//				result.write(FileSystems.getDefault().getPath(myWorld.getName()+" route.txt"));
+//			}
+			
+			System.out.println("Result: "+result);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
