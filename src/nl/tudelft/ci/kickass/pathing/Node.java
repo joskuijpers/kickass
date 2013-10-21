@@ -93,7 +93,7 @@ public class Node {
 			Node current = queue.remove(0);
 			
 			for(Node n : current.adjacentNodes) {
-				if(done.contains(n) || !n.isValid())
+				if(!n.isValid() || done.contains(n))
 					continue;
 				
 				if(n.coordinate.equals(coordinate))
@@ -101,10 +101,49 @@ public class Node {
 
 				queue.add(n);
 			}
+			
 			done.add(current);
 		}
 		
 		return null;
+	}
+	
+	public void remove() {
+		System.out.println("Remove node at "+coordinate);
+		for(Direction dir : Direction.values()) {
+			if(!dir.isValid())
+				continue;
+			
+			Node adjacent = adjacentNodes[dir.getValue()];
+			if(!adjacent.isValid())
+				continue;
+			
+			adjacent.adjacentNodes[dir.inverse().getValue()] = NullNode.getInstance();
+			adjacentNodes[dir.getValue()] = NullNode.getInstance();
+		}
+	}
+	
+	public boolean isCenterOfIntersection() {
+		if(numberOfAdjacentNodes() != 4)
+			return false;
+	
+		for(Node adjacent : adjacentNodes) {
+			Direction dirToAdjacent = this.getCoordinate().directionToAdjacent(adjacent.getCoordinate()); 
+			
+			for(Direction dir : Direction.values()) {
+				if(!dir.isValid())
+					continue;
+				
+				if(dir == dirToAdjacent.inverse()
+						|| dir == dirToAdjacent)
+					continue;
+				
+				if(adjacent.hasAdjacentNode(dir))
+					return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	public ArrayList<Node> makeFlat() {
@@ -134,6 +173,21 @@ public class Node {
 	}
 	
 	public boolean isValid() {
+		return true;
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if(!(other instanceof Node))
+			return false;
+		Node otherNode = (Node)other;
+		
+		if(!otherNode.coordinate.equals(coordinate))
+			return false;
+		
+		if(otherNode.value != value)
+			return false;
+		
 		return true;
 	}
 	

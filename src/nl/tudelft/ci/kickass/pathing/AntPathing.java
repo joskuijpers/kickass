@@ -11,10 +11,10 @@ import nl.tudelft.ci.kickass.world.World;
 
 public class AntPathing extends PathingAlgorithm {
 	
-	public final static int MAX_NUM_ITERATIONS = 10; // number of optimization iterations
-	public final static int NUM_ANTS_PER_ITERATION = 25; // number of ants used per iteration
+	public final static int MAX_NUM_ITERATIONS = 10000; // number of optimization iterations
+	public final static int NUM_ANTS_PER_ITERATION = 10; // number of ants used per iteration
 	public final static double PHEROMONE_DROPPED_BY_ANT = 10.0;
-	public final static double PHEROMONE_EVAPORATION_PARAM = 0.1; // val = val*(1-PARAM)
+	public final static double PHEROMONE_EVAPORATION_PARAM = 0.01; // val = val*(1-PARAM)
 	public final static double CONVERGENCE_CRITERION = 10;
 	public final static int NUM_THREADS = 1;
 	
@@ -29,30 +29,35 @@ public class AntPathing extends PathingAlgorithm {
 	
 	@Override
 	public Route findRoute() {
-		Node rootNode, endNode;
+		Node rootNode;
 		
 		// Generate the node tree
 		rootNode = world.generateTree();
-		endNode = rootNode.findNode(endCoordinate);
 		
 		// Optimize the maze
-		optimizeMaze(rootNode,endNode);
+		optimizeMaze(rootNode);
 		
 		// Walk over the tree to find the shortest route
-		Ant kingAnt = new Ant(rootNode,endNode);
+		Ant kingAnt = new Ant(rootNode,endCoordinate);
 		while(!kingAnt.isFinished())
 			kingAnt.doStep();
 		
 		// If at dead end, the maze has no possible route or
 		// the math is wrong
 		assert !kingAnt.isAtDeadEnd();
+		if(kingAnt.isAtDeadEnd())
+			System.err.println("ERROR: Dead end");
 		
 		Route route = kingAnt.getRoute();
+		if(!route.getStep(route.getLength()-1).getCoordinate().equals(endCoordinate)) {
+			System.err.println("ERROR: Not end node");
+			return null;
+		}
 		
 		return route;
 	}
 	
-	private void optimizeMaze(Node start, Node end) {
+	private void optimizeMaze(Node start) {
 		int iterations = 0;
 		ArrayList<Node> nodes;
 		
@@ -60,7 +65,7 @@ public class AntPathing extends PathingAlgorithm {
 		nodes = start.makeFlat();
 
 		while((iterations < MAX_NUM_ITERATIONS)) {
-			doIteration(start,end);
+			doIteration(start);
 			
 			// Decrease all pheromones
 			for(Node node : nodes)
@@ -70,7 +75,7 @@ public class AntPathing extends PathingAlgorithm {
 		}
 	}
 	
-	private void doIteration(Node start, Node end) {
+	private void doIteration(Node start) {
 		ArrayList<Ant> ants;
 		ConcurrentLinkedQueue<Ant> queue;
 		ThreadGroup antGrouping;
@@ -80,7 +85,7 @@ public class AntPathing extends PathingAlgorithm {
 		queue = new ConcurrentLinkedQueue<Ant>();
 		
 		for(int i = 0; i < NUM_ANTS_PER_ITERATION; ++i)
-			ants.add(new Ant(start,end));
+			ants.add(new Ant(start,endCoordinate));
 		queue.addAll(ants);
 		
 		// Create threads for ant running
@@ -100,7 +105,7 @@ public class AntPathing extends PathingAlgorithm {
 			if(a.isAtDeadEnd)
 				d++;
 		}
-		System.out.println("\nNum Finished: "+f+", num dead: "+d+", num with route: "+(f-d));
+//		System.out.println("\nNum Finished: "+f+", num dead: "+d+", num with route: "+(f-d));
 	}
 	
 	final class AntExecutor implements Executor {
@@ -148,8 +153,10 @@ public class AntPathing extends PathingAlgorithm {
 				}
 				
 				// Something happened to the ant
-				if(ant.isAtDeadEnd) { // It died
+				if(ant.isAtDeadEnd) {
 				} else {
+					if(!ant.getRoute().getStep(ant.getRoute().getLength()-1).getCoordinate().equals(endCoordinate))
+						System.err.println("Error Here!");
 					ant.dropPheromones(1.0);
 				}
 			}
@@ -159,7 +166,7 @@ public class AntPathing extends PathingAlgorithm {
 	final class Ant {
 		
 		private Node startNode;
-		private Node finishNode;
+		private Coordinate endCoordinate;
 		
 		private Node currentNode;
 		private Route route;
@@ -167,9 +174,9 @@ public class AntPathing extends PathingAlgorithm {
 		private boolean isFinished = false;
 		private boolean isAtDeadEnd = false;
 		
-		Ant(Node startNode, Node finishNode) {
+		Ant(Node startNode, Coordinate endCoordinate) {
 			this.startNode = startNode;
-			this.finishNode = finishNode;
+			this.endCoordinate = endCoordinate;
 			this.currentNode = startNode;
 			
 			route = new Route(startNode.getCoordinate());
@@ -211,10 +218,12 @@ public class AntPathing extends PathingAlgorithm {
 				return false;
 			}
 			
+//			System.out.println("Goto direction "+direction);
+			
 			currentNode = currentNode.getAdjacentNode(direction);
 			route.addStep(currentNode);
 			
-			if(currentNode.equals(finishNode)) {
+			if(currentNode.getCoordinate().equals(endCoordinate)) {
 				isFinished = true;
 				return false;
 			}
@@ -262,7 +271,7 @@ public class AntPathing extends PathingAlgorithm {
 			double random = Math.random();
 			double sliceStart = 0.0;
 			for(int i = 0; i < numberOfDirections; i++) {
-				if(sliceStart <= random && random <= sliceStart + chances[i])
+				if(sliceStart <= random && random < (sliceStart + chances[i]))
 					return directions[i];
 				
 				sliceStart += chances[i];
