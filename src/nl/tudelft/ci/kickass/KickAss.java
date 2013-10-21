@@ -2,7 +2,6 @@ package nl.tudelft.ci.kickass;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.util.ArrayList;
 
 import nl.tudelft.ci.kickass.pathing.AntPathing;
 import nl.tudelft.ci.kickass.world.Route;

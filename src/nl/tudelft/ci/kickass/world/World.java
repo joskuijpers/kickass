@@ -20,7 +20,7 @@ public class World {
 	private Coordinate startCoordinate;
 	private Coordinate finishCoordinate;
 	
-	private boolean maze[][];
+	private byte maze[][];
 	
 	public World(Path root, String name) throws IOException {
 		this.name = name;
@@ -40,17 +40,43 @@ public class World {
 		// Skip over line delimiter
 		scanner.nextLine();
 		
-		maze = new boolean[height][width];
+		maze = new byte[height][width];
 		
 		for(int y = 0; y < height; y++) {
 			for(int x = 0; x < width; x++) {
-				maze[y][x] = (scanner.nextInt() == 1)?true:false;
+				maze[y][x] = (byte)((scanner.nextInt() == 1)?1:0);
 				scanner.skip(" ");
 			}
 			scanner.nextLine();
 		}
 		
 		scanner.close();
+		
+		optimizeMaze();
+	}
+	
+	private void optimizeMaze() {
+		
+		/*
+		 * Find fields of 3*3 non-zeroes and increase the value of the center
+		 * Then, after the whole field is finished, transform all numbers >1 to 0
+		 */
+		for(int y = 0; y < height-2; y++) {
+			for(int x = 0; x < width-2; x++) {
+				
+				if(maze[y][x] > 0 && maze[y][x+1] > 0 && maze[y][x+2] > 0
+						&& maze[y+1][x] > 0 && maze[y+1][x+1] > 0 && maze[y+1][x+2] > 0
+						&& maze[y+2][x] > 0 && maze[y+2][x+1] > 0 && maze[y+2][x+2] > 0)
+					maze[y+1][x+1] = 2;
+			}
+		}
+		
+		for(int y = 0; y < height-2; y++) {
+			for(int x = 0; x < width-2; x++) {
+				if(maze[y][x] > 1)
+					maze[y][x] = 0;
+			}
+		}
 	}
 	
 	private void readGoalCoords() throws IOException {
@@ -98,7 +124,7 @@ public class World {
 	public boolean isObstacleAtCoordinate(Coordinate c) {
 		assert c.getX() <= width && c.getY() <= height;
 		
-		return !maze[c.getY()][c.getX()];
+		return maze[c.getY()][c.getX()] == 0;
 	}
 	
 	public Node generateTree() {
@@ -151,41 +177,14 @@ public class World {
 				}
 			}
 		}
-		/*
-		queue = new ArrayList<Node>();
-		queue.add(root);
-		ArrayList<Node> handled = new ArrayList<Node>();
 		
-		while(queue.size() != 0) {
-			current = queue.remove(0);
-			
-			if(current.numberOfAdjacentNodes() == 4) {
-				Coordinate coord = current.getCoordinate();
-		
-				// Make sure it is not an intersection
-				if(!current.isCenterOfIntersection()) {
-					current.remove();
-					continue;
-				}
-			}
-			
-			for(Direction dir : Direction.values()) {
-				Node n = current.getAdjacentNode(dir);
-				if(n.isValid() && !handled.contains(n))
-					queue.add(n);
-			}
-			
-			handled.add(current);
-		}
-		*/
-
 		return root;
 	}
 	
 	public void printMaze() {
 		for(int y = 0; y < height; y++) {
 			for(int x = 0; x < width; x++) {
-				System.out.print(maze[y][x]?" ":"@");
+				System.out.print((maze[y][x] != 0)?" ":"@");
 			}
 			System.out.println();
 		}

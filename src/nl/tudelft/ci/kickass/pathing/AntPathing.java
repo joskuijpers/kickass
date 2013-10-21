@@ -11,10 +11,10 @@ import nl.tudelft.ci.kickass.world.World;
 
 public class AntPathing extends PathingAlgorithm {
 	
-	public final static int MAX_NUM_ITERATIONS = 10000; // number of optimization iterations
-	public final static int NUM_ANTS_PER_ITERATION = 10; // number of ants used per iteration
+	public final static int MAX_NUM_ITERATIONS = 1000; // number of optimization iterations
+	public final static int NUM_ANTS_PER_ITERATION = 100; // number of ants used per iteration
 	public final static double PHEROMONE_DROPPED_BY_ANT = 10.0;
-	public final static double PHEROMONE_EVAPORATION_PARAM = 0.01; // val = val*(1-PARAM)
+	public final static double PHEROMONE_EVAPORATION_PARAM = 0.1; // val = val*(1-PARAM)
 	public final static double CONVERGENCE_CRITERION = 10;
 	public final static int NUM_THREADS = 1;
 	
@@ -39,6 +39,7 @@ public class AntPathing extends PathingAlgorithm {
 		
 		// Walk over the tree to find the shortest route
 		Ant kingAnt = new Ant(rootNode,endCoordinate);
+		kingAnt.setUseChances(false); // Follow best path, no chances
 		while(!kingAnt.isFinished())
 			kingAnt.doStep();
 		
@@ -100,12 +101,24 @@ public class AntPathing extends PathingAlgorithm {
 		
 		int f = 0, d = 0;
 		for(Ant a : ants) {
-			if(a.isFinished)
+			if(a.isFinished){
+				if(!a.isAtDeadEnd())
+					//System.out.print("F("+a.getRoute().getLength()+")");
 				f++;
-			if(a.isAtDeadEnd)
+			}
+			if(a.isAtDeadEnd) {
+				//System.out.print("D");
 				d++;
+			}
 		}
-//		System.out.println("\nNum Finished: "+f+", num dead: "+d+", num with route: "+(f-d));
+		//System.out.println();
+		
+		if(d == 0) {
+			System.out.println("Num Finished: "+f+", num dead: "+d+", num with route: "+(f-d));
+			for(Ant a : ants) {
+				System.out.print(a.getRoute());
+			}
+		}
 	}
 	
 	final class AntExecutor implements Executor {
@@ -173,6 +186,7 @@ public class AntPathing extends PathingAlgorithm {
 		
 		private boolean isFinished = false;
 		private boolean isAtDeadEnd = false;
+		private boolean useChances = true;
 		
 		Ant(Node startNode, Coordinate endCoordinate) {
 			this.startNode = startNode;
@@ -181,6 +195,10 @@ public class AntPathing extends PathingAlgorithm {
 			
 			route = new Route(startNode.getCoordinate());
 			route.addStep(startNode);
+		}
+		
+		void setUseChances(boolean chances) {
+			this.useChances = chances;
 		}
 		
 		Route getRoute() {
@@ -262,11 +280,22 @@ public class AntPathing extends PathingAlgorithm {
 
 			// Math to find the actual direction:
 			double chances[] = new double[numberOfDirections];
+			Node highestNode = NullNode.getInstance();
+			int highestDirection = -1;
 			
 			for(int i = 0; i < numberOfDirections; i++) {
 				Node adjacent = currentNode.getAdjacentNode(directions[i]);
-				chances[i] = adjacent.getValue() / totalPheromone;
+				
+				if(useChances)
+					chances[i] = adjacent.getValue() / totalPheromone;
+				else if(adjacent.getValue() > highestNode.getValue()) {
+					highestNode = adjacent;
+					highestDirection = i;
+				}
 			}
+			
+			if(!useChances)
+				return directions[highestDirection];
 			
 			double random = Math.random();
 			double sliceStart = 0.0;

@@ -14,6 +14,14 @@ public class Node {
 	
 	private Node adjacentNodes[];
 	
+	public enum NodeType {
+		PATH,
+		FIELD,
+		UNKNOWN
+	}
+	
+	private NodeType type = NodeType.UNKNOWN;
+	
 	protected Node() {
 		coordinate = InvalidCoordinate.getInstance();
 	}
@@ -43,10 +51,30 @@ public class Node {
 		this.value = value;
 	}
 	
+	public NodeType getType() {
+		return type;
+	}
+	
+	public void setType(NodeType type) {
+		this.type = type;
+	}
+	
 	public Node getAdjacentNode(Direction direction) {
 		if(!direction.isValid())
 			return NullNode.getInstance();
 		return adjacentNodes[direction.getValue()];
+	}
+	
+	public Node[] getAdjacentNodes() {
+		ArrayList<Node> res = new ArrayList<Node>();
+		
+		for(Node node : adjacentNodes) {
+			if(node.isValid())
+				res.add(node);
+		}
+		
+		Node[] retType = {};
+		return res.toArray(retType);
 	}
 	
 	public void setAdjacentNode(Direction direction, Node node) {
