@@ -11,11 +11,12 @@ import nl.tudelft.ci.kickass.world.World;
 
 public class AntPathing extends PathingAlgorithm {
 	
-	public final static int MAX_NUM_ITERATIONS = 1000; // number of optimization iterations
-	public final static int NUM_ANTS_PER_ITERATION = 100; // number of ants used per iteration
-	public final static double PHEROMONE_DROPPED_BY_ANT = 10.0;
-	public final static double PHEROMONE_EVAPORATION_PARAM = 0.1; // val = val*(1-PARAM)
+	public final static int MAX_NUM_ITERATIONS = 20; // number of optimization iterations
+	public final static int NUM_ANTS_PER_ITERATION = 20; // number of ants used per iteration
+	public final static double PHEROMONE_DROPPED_BY_ANT = 200.0;
+	public final static double PHEROMONE_EVAPORATION_PARAM = 0.2; // val = val*(1-PARAM)
 	public final static double CONVERGENCE_CRITERION = 10;
+	public final static double CROSS_PATH_PARAM = 1.0;//0.5;
 	public final static int NUM_THREADS = 1;
 	
 	private final World world;
@@ -84,6 +85,8 @@ public class AntPathing extends PathingAlgorithm {
 		
 		ants = new ArrayList<Ant>();
 		queue = new ConcurrentLinkedQueue<Ant>();
+		
+		System.err.println("ITER!");
 		
 		for(int i = 0; i < NUM_ANTS_PER_ITERATION; ++i)
 			ants.add(new Ant(start,endCoordinate));
@@ -243,6 +246,7 @@ public class AntPathing extends PathingAlgorithm {
 			
 			if(currentNode.getCoordinate().equals(endCoordinate)) {
 				isFinished = true;
+				System.err.println("FOUND ROUTEE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "+route);
 				return false;
 			}
 			
@@ -250,52 +254,81 @@ public class AntPathing extends PathingAlgorithm {
 		}
 		
 		private Direction chooseDirection() {
-			int numberOfDirections = 0;
-			Node previousStep = route.getStep(route.getLength()-2); // last is currentNode, so -2 is prev 
+			int numberOfDirections = 0; 
 			Direction directions[] = new Direction[4];
+			Node previousNode = route.getStep(route.getLength()-2); // -1 is current, -2 is prev
 			double totalPheromone = 0.0;
 
 			for(Direction dir : Direction.values()) {
 				Node nextNode = currentNode.getAdjacentNode(dir);
+				double value = nextNode.getValue();
+				int count = route.countStep(nextNode);
 				
 				// Can't go here...
 				if(!nextNode.isValid())
 					continue;
 
-				// ...there now...
-				if(nextNode == previousStep)
+				// Do not go back the same direction to prevent most loops
+				if(count > 0 && nextNode.equals(previousNode))
+					value *= Math.pow(CROSS_PATH_PARAM*0.2, count);
+
+				// ...there now or been there.
+				else if(count > 0)
+					value *= Math.pow(CROSS_PATH_PARAM, count);
+				if(count > 10)
 					continue;
-				
-				// ...been there.
-				if(route.hasStep(nextNode))
-					continue;
-				
+					
 				directions[numberOfDirections++] = dir;
-				totalPheromone += nextNode.getValue();
+				totalPheromone += value;
 			}
 			
 			// Nowhere to go
-			if(numberOfDirections == 0)
+			if(numberOfDirections == 0) {
+				System.err.println("DEAD");
 				return Direction.INVALID_DIRECTION;
+			}
 
+			if(numberOfDirections == 1)
+				return directions[0];
+			
 			// Math to find the actual direction:
 			double chances[] = new double[numberOfDirections];
-			Node highestNode = NullNode.getInstance();
+			double highestValue = -10000.0;
+			double lowestValue = 100000.0;
 			int highestDirection = -1;
 			
 			for(int i = 0; i < numberOfDirections; i++) {
 				Node adjacent = currentNode.getAdjacentNode(directions[i]);
+				double value;
+				
+				// Every time the same node is cross, lower the used value
+//				if(route.countStep(adjacent) > 0)
+//					System.out.println("Value was "+adjacent.getValue()+"; And is now: "+Math.pow(CROSS_PATH_PARAM/(adjacent.equals(previousNode)?5.0:1.0),route.countStep(adjacent))+ ", With adjacent: "+ route.countStep(adjacent));
+				value = adjacent.getValue() * Math.pow(CROSS_PATH_PARAM/(adjacent.equals(previousNode)?5.0:1.0), route.countStep(adjacent));
 				
 				if(useChances)
-					chances[i] = adjacent.getValue() / totalPheromone;
-				else if(adjacent.getValue() > highestNode.getValue()) {
-					highestNode = adjacent;
+					chances[i] = value / totalPheromone;
+				if(value > highestValue) {
+					highestValue = value;
 					highestDirection = i;
+				}
+				if(value < lowestValue) {
+					lowestValue = value;
 				}
 			}
 			
 			if(!useChances)
 				return directions[highestDirection];
+			
+			if(lowestValue == highestValue) {
+				// Find direction most towards the finish
+				for(int i = numberOfDirections; i < 4; i++)
+					directions[i] = Direction.INVALID_DIRECTION;
+				System.out.println("NumDirs "+numberOfDirections+" LOW: "+lowestValue+" HIGH: "+highestValue);
+				Direction x = route.getStep(route.getLength()-1).getCoordinate().nearestDirectionToFar(endCoordinate,directions);
+				System.out.println("RESULT: "+x);
+				return x;
+			}
 			
 			double random = Math.random();
 			double sliceStart = 0.0;

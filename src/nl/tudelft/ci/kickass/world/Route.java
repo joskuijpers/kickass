@@ -41,6 +41,17 @@ public class Route {
 		return steps.contains(node);
 	}
 	
+	public int countStep(Node node) {
+		if(!node.isValid())
+			return 0;
+		int count = 0;
+		for(Node n : steps) {
+			if(n.equals(node))
+				count++;
+		}
+		return count;
+	}
+	
 	public void write(Path path) throws IOException {
 		BufferedWriter writer;
 		
