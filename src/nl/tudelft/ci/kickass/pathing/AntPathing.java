@@ -11,8 +11,8 @@ import nl.tudelft.ci.kickass.world.World;
 
 public class AntPathing extends PathingAlgorithm {
 	
-	public final static int MAX_NUM_ITERATIONS = 20; // number of optimization iterations
-	public final static int NUM_ANTS_PER_ITERATION = 20; // number of ants used per iteration
+	public final static int MAX_NUM_ITERATIONS = 30; // number of optimization iterations
+	public final static int NUM_ANTS_PER_ITERATION = 10; // number of ants used per iteration
 	public final static double PHEROMONE_DROPPED_BY_ANT = 200.0;
 	public final static double PHEROMONE_EVAPORATION_PARAM = 0.2; // val = val*(1-PARAM)
 	public final static double CONVERGENCE_CRITERION = 10;
@@ -85,8 +85,6 @@ public class AntPathing extends PathingAlgorithm {
 		
 		ants = new ArrayList<Ant>();
 		queue = new ConcurrentLinkedQueue<Ant>();
-		
-		System.err.println("ITER!");
 		
 		for(int i = 0; i < NUM_ANTS_PER_ITERATION; ++i)
 			ants.add(new Ant(start,endCoordinate));
@@ -246,7 +244,6 @@ public class AntPathing extends PathingAlgorithm {
 			
 			if(currentNode.getCoordinate().equals(endCoordinate)) {
 				isFinished = true;
-				System.err.println("FOUND ROUTEE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "+route);
 				return false;
 			}
 			
@@ -269,13 +266,18 @@ public class AntPathing extends PathingAlgorithm {
 					continue;
 
 				// Do not go back the same direction to prevent most loops
-				if(count > 0 && nextNode.equals(previousNode))
+				/*if(count > 0 && nextNode.equals(previousNode))
 					value *= Math.pow(CROSS_PATH_PARAM*0.2, count);
 
 				// ...there now or been there.
 				else if(count > 0)
 					value *= Math.pow(CROSS_PATH_PARAM, count);
 				if(count > 10)
+					continue;*/
+				if(nextNode.equals(previousNode))
+					continue;
+				
+				if(route.hasStep(nextNode))
 					continue;
 					
 				directions[numberOfDirections++] = dir;
@@ -284,7 +286,6 @@ public class AntPathing extends PathingAlgorithm {
 			
 			// Nowhere to go
 			if(numberOfDirections == 0) {
-				System.err.println("DEAD");
 				return Direction.INVALID_DIRECTION;
 			}
 
@@ -302,9 +303,8 @@ public class AntPathing extends PathingAlgorithm {
 				double value;
 				
 				// Every time the same node is cross, lower the used value
-//				if(route.countStep(adjacent) > 0)
-//					System.out.println("Value was "+adjacent.getValue()+"; And is now: "+Math.pow(CROSS_PATH_PARAM/(adjacent.equals(previousNode)?5.0:1.0),route.countStep(adjacent))+ ", With adjacent: "+ route.countStep(adjacent));
-				value = adjacent.getValue() * Math.pow(CROSS_PATH_PARAM/(adjacent.equals(previousNode)?5.0:1.0), route.countStep(adjacent));
+//				value = adjacent.getValue() * Math.pow(CROSS_PATH_PARAM/(adjacent.equals(previousNode)?5.0:1.0), route.countStep(adjacent));
+				value = adjacent.getValue();
 				
 				if(useChances)
 					chances[i] = value / totalPheromone;
@@ -320,7 +320,7 @@ public class AntPathing extends PathingAlgorithm {
 			if(!useChances)
 				return directions[highestDirection];
 			
-			if(lowestValue == highestValue) {
+			/*if(lowestValue == highestValue) {
 				// Find direction most towards the finish
 				for(int i = numberOfDirections; i < 4; i++)
 					directions[i] = Direction.INVALID_DIRECTION;
@@ -328,7 +328,7 @@ public class AntPathing extends PathingAlgorithm {
 				Direction x = route.getStep(route.getLength()-1).getCoordinate().nearestDirectionToFar(endCoordinate,directions);
 				System.out.println("RESULT: "+x);
 				return x;
-			}
+			}*/
 			
 			double random = Math.random();
 			double sliceStart = 0.0;

@@ -14,8 +14,8 @@ public class KickAss {
 		try {
 			World myWorld = new World(FileSystems.getDefault().getPath(""),
 //					"GradingMaze3 hard");
-					"GradingMaze2 medium");
-//					"GradingMaze1 easy");
+//					"GradingMaze2 medium");
+					"GradingMaze1 easy");
 			
 			AntPathing pathing = new AntPathing(myWorld,myWorld.getStartCoordinate(),myWorld.getFinishCoordinate());
 			Route result = pathing.findRoute();
